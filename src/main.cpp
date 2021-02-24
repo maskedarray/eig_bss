@@ -58,6 +58,7 @@ void setup() {
     xTaskCreatePinnedToCore(vBlTransfer, "Bluetooth Transfer", 10000, NULL, 2, &blTask1, 0);
 
     log_d("created all tasks");
+
 }
 unsigned long lastMillis = 0;
 String CloudData = "";
@@ -140,6 +141,7 @@ void vBlCheck( void *pvParameters ){
     TickType_t xLastWakeTime_2;
     TickType_t xPeriod_2 = 0.1*DATA_ACQUISITION_TIME; // Period for sending will be one minute
     xLastWakeTime_2 = xTaskGetTickCount();
+
     
     for(;;){
         xSemaphoreTake(semaBlRx1, portMAX_DELAY);
