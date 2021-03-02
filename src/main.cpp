@@ -233,7 +233,7 @@ void vRpcService(void *pvParameters){
     }
 }
 
-void vClienAuth( void *pvParameters ){
+void vClientAuth( void *pvParameters ){
     for(;;){
         wf.client_auth();
         vTaskDelay(100);
