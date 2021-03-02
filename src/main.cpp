@@ -54,6 +54,7 @@ void setup() {
         log_d("waiting for sync\r\n");
         delay(100);
     }
+    delay(5000);
     set_system_time();      //timeout for response has been set to 20000 so slave initializes successfully 
     semaAqData1 = xSemaphoreCreateBinary();
     semaBlTx1 = xSemaphoreCreateBinary();
@@ -169,7 +170,7 @@ void vAcquireData( void *pvParameters ){
         }
         xSemaphoreGive(semaAqData1); 
         xSemaphoreGive(semaBlTx1);      //signal to call bluetooth transfer function once
-        vTaskDelayUntil(&xLastWakeTime, 30*DATA_ACQUISITION_TIME);    //defines the data acquisition rate
+        vTaskDelayUntil(&xLastWakeTime, DATA_ACQUISITION_TIME);    //defines the data acquisition rate
     }   //end for
 }   //end vAcquireData
 
