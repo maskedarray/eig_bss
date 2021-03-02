@@ -47,7 +47,7 @@ void IRAM_ATTR test(){
 void setup() {
     cmdinit();
     bt.init();
-    pinMode(25, INPUT);
+    pinMode(25, INPUT_PULLDOWN);
     pinMode(0,INPUT);
     attachInterrupt(0, test, FALLING);
     while(!digitalRead(25)){   

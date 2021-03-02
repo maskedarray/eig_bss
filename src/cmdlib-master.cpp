@@ -110,9 +110,11 @@ bool set_system_time(){
     if(ret.length() > 0){
         String unixtime = parse_by_key(ret, 1);
         rtc.setTime(unixtime.toDouble(), 0);
+        log_d("the time is set\r\n");
         return true;
     }
     else{
+        log_d("the time is not set\r\n");
         return false;
     }
 }
@@ -186,8 +188,8 @@ bool command_8_getTime()
 }
 
 bool command_9_ejectBattery(String message){
-    int batt_num = parse_by_key(message,1).toInt();
-    log_d("ejected battery %d\r\n",batt_num);
+    int slot_num = parse_by_key(message,1).toInt();
+    log_d("ejected battery %d\r\n",slot_num);
     //eject battery by handling the bss through CAN
 }
 
