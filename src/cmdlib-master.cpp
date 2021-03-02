@@ -162,33 +162,6 @@ bool command_4_auth(String message, String auth_code)
     }
 };
 
-/**
- * @brief This command initiates battery swap mode and saves the initial cycles
- * for subtraction when the battery swap mode is exited
- *
- * @return true if initialization is successful
- * @return false otherwise
- */
-bool command_5_enterSwap()
-{
-    cmdsend("<40>\r\n");
-    log_d("entered battery swap mode. getting bss id from slave...\r\n");
-    String ret = readStringUntilCustom('\n', 20000);
-    return ret.isEmpty()? bt.send("error") : bt.send(ret);
-};
-
-/**
- * @brief This command exits battery swap mode and takes the final cycles of the
- * swapped batteries and sends the difference via bluetooth.  
- *
- * @return true if sending is successful
- * @return false otherwise
- */
-bool command_6_exitSwap()
-{
-    log_d("exited battery swap mode\r\n");
-    return true;
-};
 
 /**
  * @brief this command tells the slave to check the wifi connection and send the status back to the master
@@ -210,6 +183,12 @@ bool command_8_getTime()
     log_d("time request sent\r\n");
     String ret = readStringUntilCustom('\n', 5000);
     return ret.isEmpty()? bt.send("error") : bt.send(ret);
+}
+
+bool command_9_ejectBattery(String message){
+    int batt_num = parse_by_key(message,1).toInt();
+    log_d("ejected battery %d\r\n",batt_num);
+    //eject battery by handling the bss through CAN
 }
 
 /**
@@ -242,18 +221,15 @@ bool command_bt()
                 case 3: // connect to new credentials
                     auth_flag = false;
                     return command_3_newConn(message);
-                case 5: // enter battery swapping mode
-                    auth_flag = false;
-                    return command_5_enterSwap();
-                case 6: // exit battery swapping mode
-                    auth_flag = false;
-                    return command_6_exitSwap();
                 case 7: // check wifi
                     auth_flag = false;
                     return command_7_checkWifi();
                 case 8: // check time
                     auth_flag = false;
                     return command_8_getTime();
+                case 9:
+                    auth_flag = false;
+                    return command_9_ejectBattery(message);
                 default:
                     auth_flag = false;
                     log_e("invalid ID\r\n");
