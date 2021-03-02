@@ -29,6 +29,7 @@ TaskHandle_t dataTask1, blTask1, blTask2;
 void vAcquireData( void *pvParameters );
 void vBlTransfer( void *pvParameters );
 void vBlCheck( void *pvParameters );
+bool flag = false;  //false means battery is plugged in
 
 
 SemaphoreHandle_t semaAqData1, semaBlTx1, semaBlRx1;
@@ -39,11 +40,16 @@ void addSlotsData(String B_Slot,String B_ID,String B_Auth, String B_Age,String B
     return;
 }
 
+void IRAM_ATTR test(){
+    flag = !flag;
+}
 
 void setup() {
     cmdinit();
     bt.init();
     pinMode(25, INPUT);
+    pinMode(0,INPUT);
+    attachInterrupt(0, test, FALLING);
     while(!digitalRead(25)){   
         log_d("waiting for sync\r\n");
         delay(100);
@@ -90,7 +96,12 @@ void vAcquireData( void *pvParameters ){
             towrite += String("0.234") + ",";           //MCU CURRENT
             towrite += String("34.36") + ",";           //MCU Temperature
             //          B_Slot, B_ID, B_Auth,  B_Age, B_Type , B_M_Cycles, B_U_Cycles , B_Temp, B_SoC, B_SoH, B_RoD, B_Vol , B_Curr
-            addSlotsData("01", "1718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+            if(flag){
+                addSlotsData("01", "1718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+            }
+            else{
+                addSlotsData("01", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";    
+            }
             addSlotsData("02", "1718953130", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
             addSlotsData("03", "1718953131", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
             addSlotsData("04", "1718953128", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
