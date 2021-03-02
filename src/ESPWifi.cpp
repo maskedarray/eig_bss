@@ -20,7 +20,7 @@ bool ESP_WiFi::init()
     Serial.println();
     Serial.println();
     Serial.print("Connecting to ");
-    Serial.println(ssid);
+    Serial.println(DEFAULT_SSID);
 
     WiFi.begin(DEFAULT_SSID, DEFAULT_PASSWORD);
 
