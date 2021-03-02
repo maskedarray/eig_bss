@@ -64,7 +64,6 @@ bool ESP_WiFi::client_auth()
     }
     else
     {
-        log_e("Client not found");
         return false;
     }
 }
