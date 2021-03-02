@@ -8,6 +8,7 @@
 #define DEFAULT_SSID "EiG"
 #define DEFAULT_PASSWORD "12344321"
 
+
 /**
  * This library adds functions to connect to the closest available AP for WiFi
  * or create a new AP for use. The maximum limit for the number of credentials
@@ -21,6 +22,8 @@ class ESP_WiFi
         int32_t credential_length;
         bool remake_access_points();
         void update_APs();
+        const char* ssid     = "osky";
+        const char* password = "1122334445";
 
     public:
         String SSID_List[10];
@@ -30,6 +33,7 @@ class ESP_WiFi
         bool create_new_connection(const char *SSID, const char *Password);
         bool connect_to_nearest();
         bool check_connection();
+        bool client_auth();
 };
 
 extern ESP_WiFi wf;

@@ -1,15 +1,72 @@
 #include <ESPWiFi.h>
+
+WiFiServer server(80);
+
 //TODO: optimize wifi reconnection time. 
 /**
  * This function initializes the ESP wifi module with the requisite
  * configurations. It attempts to connect to a default SSID and password and
- * also updates the vector for APs in the WiFiMulti class.
+ * also updates the vector for APs in the WiFiMulti class. Additionally it also
+ * initializes the server.
  */
 bool ESP_WiFi::init()
 {
     Serial.println("init() -> ESP_WiFi.cpp -> updating AP list from SD card");
     this -> update_APs();
+    delay(10);
+
+    // We start by connecting to a WiFi network
+
+    Serial.println();
+    Serial.println();
+    Serial.print("Connecting to ");
+    Serial.println(ssid);
+
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+
+    Serial.println("");
+    Serial.println("WiFi connected.");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+    
+    server.begin();
     return true;
+}
+
+bool ESP_WiFi::client_auth()
+{
+    WiFiClient client = server.available();   // listen for incoming clients
+
+    if (client) 
+    {                             // if you get a client,
+        Serial.println("New Client.");           // print a message out the serial port
+        while (client.connected()) 
+        {            // loop while the client's connected
+            if (client.available()) 
+            {             // if there's bytes to read from the client,
+                String cl = client.readStringUntil('\n');             // read a byte, then
+                Serial.println(cl);                    // print it out the serial monitor
+                if(cl == "client1711")
+                {
+                    client.print("BSS9014\n");
+                    client.stop();
+                }
+            }
+        }
+        // close the connection:
+        Serial.println("Client Disconnected.");
+        return true;
+    }
+    else
+    {
+        log_e("Client not found");
+        return false;
+    }
 }
 
 /**

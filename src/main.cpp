@@ -27,11 +27,12 @@
 #include "esp32-mqtt.h"
 
 String towrite, toread;
-TaskHandle_t rpcTask, storageTask, wifiTask;
+TaskHandle_t rpcTask, storageTask, wifiTask, clientTask;
 
 void vStorage( void *pvParameters );
 void vWifiTransfer( void *pvParameters );
 void vRpcService( void *pvParameters );
+void vClientAuth( void *pvParameters);
 SemaphoreHandle_t semaStorage1, semaWifi1;
 
 
@@ -59,8 +60,11 @@ void setup() {
 
     
     xTaskCreatePinnedToCore(vRpcService, "RPC Handler", 10000, NULL, 3, &rpcTask, 0);
+    xTaskCreatePinnedToCore(vClientAuth, "CLient Authentication", 10000, NULL, 4, &clientTask, 0);
     xTaskCreatePinnedToCore(vStorage, "Storage Handler", 10000, NULL, 2, &storageTask, 1);
     xTaskCreatePinnedToCore(vWifiTransfer, "Transfer data on Wifi", 10000, NULL, 1, &wifiTask, 1);
+    pinMode(25,OUTPUT);
+    digitalWrite(25,HIGH);
     Serial.println("created all tasks");
 }
 
@@ -182,7 +186,7 @@ void vRpcService(void *pvParameters){
                     log_d("message sent to master: %s\r\n",ret_msg.c_str());
                     break;
                 }
-                case 40:    //get bss id from bss and send it to master
+                /* case 40:    //get bss id from bss and send it to master
                 {
                     xSemaphoreTake(semaWifi1,portMAX_DELAY);
                     WiFi.begin(DEFAULT_BSS_WIFI_SSID,DEFAULT_BSS_WIFI_PASS);
@@ -218,7 +222,7 @@ void vRpcService(void *pvParameters){
                     Serial2.println(ret);
                     log_d("message sent to master: %s\r\n",ret.c_str());
                     break;
-                }
+                } */
                 default:
                     break;
             }
@@ -226,6 +230,13 @@ void vRpcService(void *pvParameters){
         else{
             vTaskDelay(10);
         }
+    }
+}
+
+void vClienAuth( void *pvParameters ){
+    for(;;){
+        wf.client_auth();
+        vTaskDelay(100);
     }
 }
 
