@@ -22,8 +22,6 @@ class ESP_WiFi
         int32_t credential_length;
         bool remake_access_points();
         void update_APs();
-        const char* ssid     = "osky";
-        const char* password = "1122334445";
 
     public:
         String SSID_List[10];

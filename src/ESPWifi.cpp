@@ -22,7 +22,7 @@ bool ESP_WiFi::init()
     Serial.print("Connecting to ");
     Serial.println(ssid);
 
-    WiFi.begin(ssid, password);
+    WiFi.begin(DEFAULT_SSID, DEFAULT_PASSWORD);
 
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
