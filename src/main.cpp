@@ -92,6 +92,7 @@ void vAcquireData( void *pvParameters ){
             towrite = "";                               //empty the string
             towrite += String("18:50") + ",";           //time
             towrite += String("VEC1715001") + ",";      //vehicle id
+            towrite += String("16") + ",";
             towrite += String("3000") + ",";            //vehicle rpm
             towrite += String("5.019") + ",";           //MCU voltage
             towrite += String("0.234") + ",";           //MCU CURRENT
