@@ -53,7 +53,7 @@ bool ESP_WiFi::client_auth()
                 Serial.println(cl);                    // print it out the serial monitor
                 if(cl == "client1711")
                 {
-                    client.print("BSS9014\n");
+                    client.print("KgoLFHfaayTnPKEy26iaUqO5Qyl1\n");
                     client.stop();
                 }
             }
