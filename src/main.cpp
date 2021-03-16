@@ -16,8 +16,7 @@
 #define DATA_ACQUISITION_TIME 1000      //perform action every 1000ms
 #define DATA_MAX_LEN 1200   //bytes
 #define COMMAND_RECEIVE_TIMEOUT 1000    //millisecond
-#define DEFAULT_BSS_WIFI_SSID "h7BLH=U5f+qJCeG4"
-#define DEFAULT_BSS_WIFI_PASS "&_nJ}<pj&4w@3F}F"
+
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
@@ -88,7 +87,7 @@ String parse_by_key(String message, int key)
         index++;
     }
     
-    Serial.printf("parse_by_key() -> cmdlib.hpp -> The counter value is %d and there are %d commas in our code. \n", index, comma_count);
+    Serial.printf("parse_by_key() -> cmdlib.hpp -> The counter value is %d and there are %d commas in our code. \r\n", index, comma_count);
     index = 0;
     if(key > comma_count)
     {
@@ -111,7 +110,7 @@ String parse_by_key(String message, int key)
         key_value += temp;
         index++;
     }
-    Serial.printf("the value of the given key is %s \n", key_value.c_str());
+    Serial.printf("the value of the given key is %s \r\n", key_value.c_str());
     return key_value;
 
 }
@@ -186,43 +185,6 @@ void vRpcService(void *pvParameters){
                     log_d("message sent to master: %s\r\n",ret_msg.c_str());
                     break;
                 }
-                /* case 40:    //get bss id from bss and send it to master
-                {
-                    xSemaphoreTake(semaWifi1,portMAX_DELAY);
-                    WiFi.begin(DEFAULT_BSS_WIFI_SSID,DEFAULT_BSS_WIFI_PASS);
-                    vTaskDelay(10000);
-                    String ret = "<40,";
-                    if(WiFi.isConnected() == true){
-                        //handle here
-                        WiFiClient client;
-                        if(client.connect("192.168.43.202",80)){
-                            log_d("client connected");
-                            client.print("client1711\n");
-                            long time_start = millis();
-                            long time_stop = millis();
-                            while(time_stop - time_start < 5000){
-                                if(client.available()){
-                                    ret += client.readStringUntil('\n');
-                                    log_d("response received");
-                                    break;
-                                }
-                                time_stop = millis();
-                                vTaskDelay(10);
-                            }
-                            client.stop();
-                            log_d("client disconnected");
-                        }
-                    }
-                    else{
-                        log_d("could not connect to bss wifi");
-                    }
-                    WiFi.disconnect(false,true);
-                    xSemaphoreGive(semaWifi1);
-                    ret += ">";
-                    Serial2.println(ret);
-                    log_d("message sent to master: %s\r\n",ret.c_str());
-                    break;
-                } */
                 default:
                     break;
             }

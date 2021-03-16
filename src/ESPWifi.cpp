@@ -88,7 +88,7 @@ void ESP_WiFi::update_APs()
         i++;
     }
     credential_length = i;
-    Serial.printf("update_APs() -> ESP_WiFi.cpp -> credential length: %u \n", credential_length);
+    Serial.printf("update_APs() -> ESP_WiFi.cpp -> credential length: %u \r\n", credential_length);
 }
 
 /**
@@ -194,7 +194,7 @@ bool ESP_WiFi::remake_access_points()
     while(!SSID_List[i].isEmpty() && i < 10)
     {
         access_points->addAP(SSID_List[i].c_str(), Password_List[i].c_str());
-        Serial.printf("remake_access_points() -> ESP_WiFi.cpp -> %s and %s added \n", SSID_List[i].c_str(), Password_List[i].c_str());
+        Serial.printf("remake_access_points() -> ESP_WiFi.cpp -> %s and %s added \r\n", SSID_List[i].c_str(), Password_List[i].c_str());
         i++;
     }
     return true;
