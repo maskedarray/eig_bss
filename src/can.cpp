@@ -14,9 +14,9 @@ bool EVCan::init_can(){
 
     for(int i = 0; i < 5; i++){
         if(CAN_OK != mcp_can.begin(CAN_500KBPS))
-            log_e("init_can() -> can.cpp -> CAN bus init failed!");
+            log_e("init_can() -> can.cpp -> CAN bus init failed!\r\n");
         else{
-            log_d("init_can() -> can.cpp -> CAN bus initialized!");
+            log_d("init_can() -> can.cpp -> CAN bus initialized!\r\n");
             return true;
         }
         delay(500);
@@ -53,11 +53,11 @@ void EVCan::send_msg(uint16_t id, float soc, float hi_temp, float lo_temp, float
         data[6] = (byte)((int)((current + 1000) * 10));
         data[7] = (byte)(((int)((current + 1000) * 10)) >> 8);
         mcp_can.sendMsgBuf(id, 0, 8, data);
-        log_d("send_msg() -> can.cpp -> Data sent!");
+        log_d("send_msg() -> can.cpp -> Data sent!\r\n");
         break;
     
     default:
-        log_e("send_msg() -> can.cpp -> Invalid ID!");
+        log_e("send_msg() -> can.cpp -> Invalid ID!\r\n");
         break;
     }
 }
@@ -76,12 +76,12 @@ bool EVCan::receive_msg(void){
     bool read_success = false;
     byte data[8];
     if(CAN_MSGAVAIL == mcp_can.checkReceive()){
-        log_d("receive_msg() -> can.cpp -> Data found on CAN bus. Reading..");
+        log_d("receive_msg() -> can.cpp -> Data found on CAN bus. Reading..\r\n");
         read_success = true;
         unsigned char len = 0;
         mcp_can.readMsgBuf(&len, data);
         this->id = mcp_can.getCanId();
-        log_d("receive_msg() -> can.cpp -> ID: ");
+        log_d("receive_msg() -> can.cpp -> ID: \r\n");
         Serial.println(this->id,HEX);
         switch (this->id)
         {
@@ -94,7 +94,7 @@ bool EVCan::receive_msg(void){
                 this->lo_temp = (float)(data[3] - 40);
                 this->voltage = (float)((data[5] << 8) | data[4]) * 0.1;
                 this->current = ((float)((data[7] << 8) | data[6]) * 0.1) - 1000;
-                Serial.println(F("receive_msg() -> can.cpp -> Data read successful. Values updated"));
+                Serial.println(F("receive_msg() -> can.cpp -> Data read successful. Values updated\r\n"));
                 break;
             case 0x620:
                 this->soc = (float)data[1];
@@ -102,7 +102,7 @@ bool EVCan::receive_msg(void){
                 this->lo_temp = (float)(data[3] - 40);
                 this->voltage = (float)((data[5] << 8) | data[4]) * 0.1;
                 this->current = ((float)((data[7] << 8) | data[6]) * 0.1) - 1000;
-                Serial.println(F("receive_msg() -> can.cpp -> Data read successful. Values updated"));
+                Serial.println(F("receive_msg() -> can.cpp -> Data read successful. Values updated\r\n"));
                 break;
             case 0x630:
                 this->soc = (float)data[1];
@@ -110,7 +110,7 @@ bool EVCan::receive_msg(void){
                 this->lo_temp = (float)(data[3] - 40);
                 this->voltage = (float)((data[5] << 8) | data[4]) * 0.1;
                 this->current = ((float)((data[7] << 8) | data[6]) * 0.1) - 1000;
-                Serial.println(F("receive_msg() -> can.cpp -> Data read successful. Values updated"));
+                Serial.println(F("receive_msg() -> can.cpp -> Data read successful. Values updated\r\n"));
                 break;
             case 0x640:
                 this->soc = (float)data[1];
@@ -118,10 +118,10 @@ bool EVCan::receive_msg(void){
                 this->lo_temp = (float)(data[3] - 40);
                 this->voltage = (float)((data[5] << 8) | data[4]) * 0.1;
                 this->current = ((float)((data[7] << 8) | data[6]) * 0.1) - 1000;
-                Serial.println(F("receive_msg() -> can.cpp -> Data read successful. Values updated"));
+                Serial.println(F("receive_msg() -> can.cpp -> Data read successful. Values updated\r\n"));
                 break;
             default:
-                Serial.println(F("receive_msg() -> can.cpp -> Invalid ID!"));
+                Serial.println(F("receive_msg() -> can.cpp -> Invalid ID!\r\n"));
                 read_success = false;
                 break;
         }

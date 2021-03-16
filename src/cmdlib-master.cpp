@@ -110,11 +110,11 @@ bool set_system_time(){
     if(ret.length() > 0){
         String unixtime = parse_by_key(ret, 1);
         rtc.setTime(unixtime.toDouble(), 0);
-        log_d("the time is set\r\n");
+        log_i("the time is set\r\n");
         return true;
     }
     else{
-        log_d("the time is not set\r\n");
+        log_i("the time is not set\r\n");
         return false;
     }
 }

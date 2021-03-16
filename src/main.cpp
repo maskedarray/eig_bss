@@ -66,7 +66,7 @@ void setup() {
     xTaskCreatePinnedToCore(vAcquireData, "Data Acquisition", 10000, NULL, 3, &dataTask1, 1);
     xTaskCreatePinnedToCore(vBlCheck, "Bluetooth Commands", 10000, NULL, 1, &blTask1, 0);
     xTaskCreatePinnedToCore(vBlTransfer, "Bluetooth Transfer", 10000, NULL, 2, &blTask2, 0);
-    log_d("created all tasks\r\n");
+    log_i("created all tasks\r\n");
 }
 
 void loop() {
@@ -215,6 +215,7 @@ void vBlCheck( void *pvParameters ){
             command_bt();
             //send data to slave for storage and uploading to cloud
             if(counter > 600){          //counter for 60 seconds since task execution period is 100ms
+                log_i("sending data to slave\r\n");
                 cmdsend("<20");
                 xSemaphoreTake(semaAqData1, portMAX_DELAY);
                 cmdsend(towrite);
