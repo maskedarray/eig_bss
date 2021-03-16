@@ -11,7 +11,7 @@ void cmdinit(){
 
 bool cmdsend(String tosend){
     Serial2.print(tosend);
-    log_d("the message sent to slave is: %s \r\n", tosend.c_str());
+    log_i("the message sent to slave is: %s \r\n", tosend.c_str());
     return true;
 }
 
@@ -27,7 +27,7 @@ int timedReadCustom(unsigned long _timeout)
         }
         vTaskDelay(10);
     } while(millis() - _startMillis < _timeout);
-    log_d("timed out!\r\n");
+    log_i("timed out!\r\n");
     return -1;     // -1 indicates timeout
 }
 
@@ -74,7 +74,7 @@ String parse_by_key(String message, int key)
         index++;
     }
     
-    log_d("parse_by_key() -> cmdlib-master.cpp -> The counter value is %d and there are %d commas in our code. \n", index, comma_count);
+    log_i("parse_by_key() -> cmdlib-master.cpp -> The counter value is %d and there are %d commas in our code. \n", index, comma_count);
     index = 0;
     if(key > comma_count)
     {
@@ -97,7 +97,7 @@ String parse_by_key(String message, int key)
         key_value += temp;
         index++;
     }
-    log_d("the value of the given key is %s \n", key_value.c_str());
+    log_i("the value of the given key is %s \n", key_value.c_str());
     return key_value;
 
 };
@@ -154,7 +154,7 @@ bool command_4_auth(String message, String auth_code)
     if(entered_code == auth_code)
     {
         auth_flag = true;
-        log_d("Authentication successful\r\n");
+        log_i("Authentication successful\r\n");
         return true;
     }
     else
@@ -174,7 +174,7 @@ bool command_4_auth(String message, String auth_code)
 bool command_7_checkWifi()
 {
     cmdsend("<10>\r\n");
-    log_d("wifi check request sent. waiting for response...\r\n");
+    log_i("wifi check request sent. waiting for response...\r\n");
     String ret = readStringUntilCustom('\n', 5000);
     return ret.isEmpty()? bt.send("error") : bt.send(ret);
 }
@@ -182,14 +182,14 @@ bool command_7_checkWifi()
 bool command_8_getTime()
 {
     cmdsend("<30>\r\n");
-    log_d("time request sent\r\n");
+    log_i("time request sent\r\n");
     String ret = readStringUntilCustom('\n', 5000);
     return ret.isEmpty()? bt.send("error") : bt.send(ret);
 }
 
 bool command_9_ejectBattery(String message){
     int slot_num = parse_by_key(message,1).toInt();
-    log_d("ejected battery %d\r\n",slot_num);
+    log_i("ejected battery %d\r\n",slot_num);
     //eject battery by handling the bss through CAN
 }
 
@@ -208,10 +208,10 @@ bool command_bt()
     
     if(message.length() > 0)
     {
-        log_d("message received: %s \r\n", message);
+        log_i("message received: %s \r\n", message);
         int ID = (10 * ((uint8_t)message[1] - 48)) + ((uint8_t)message[2] - 48);
-        log_d("the authorization status is: %d \r\n", auth_flag);
-        log_d("the the ID sent is: %d \r\n", ID);
+        log_i("the authorization status is: %d \r\n", auth_flag);
+        log_i("the the ID sent is: %d \r\n", ID);
         if(ID == 4)
         {
             return command_4_auth(message, AUTH_CODE);
