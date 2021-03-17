@@ -89,6 +89,7 @@ void vAcquireData( void *pvParameters ){
         xSemaphoreTake(semaAqData1, portMAX_DELAY); //semaphore to check if sending of data over bluetooth and storage has returned
         {
             //Dummy acquisition of data
+            float randvoltage = 11 + random(0,2000)/1000.0;
             towrite = "";                               //empty the string
             towrite += String("18:50") + ",";           //time
             towrite += String("VEC1715001") + ",";      //vehicle id
@@ -105,10 +106,10 @@ void vAcquireData( void *pvParameters ){
                 addSlotsData("04", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
                 addSlotsData("05", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
                 addSlotsData("06", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("07", "BATT2", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
-                addSlotsData("08", "BATT4", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
-                addSlotsData("09", "BATT6", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
-                addSlotsData("10", "BATT8", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("07", "BATT2", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("08", "BATT4", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "26.561");towrite += ",";
+                addSlotsData("09", "BATT6", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("10", "BATT8", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "20.561");towrite += ",";
                 addSlotsData("11", "1718953121", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
                 addSlotsData("12", "1718953120", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
                 addSlotsData("13", "1718953119", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
@@ -118,10 +119,10 @@ void vAcquireData( void *pvParameters ){
             } else if (flag == 1){
                 addSlotsData("01", "1718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
                 addSlotsData("02", "1718953130", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
-                addSlotsData("03", "batt1", "BSS22", "22", "2211", "500", "200", "30", "50", "50", "22", "12.371", "20.561");towrite += ",";
-                addSlotsData("04", "BATT3","BSS22", "22", "2211", "500", "200", "30", "50", "50", "22", "12.371", "20.561");towrite += ",";
-                addSlotsData("05", "BATT5", "BSS22", "22", "2211", "500", "200", "30", "50", "50", "22", "12.371", "20.561");towrite += ",";
-                addSlotsData("06", "BATT7", "BSS22", "22", "2211", "500", "200", "30", "50", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("03", "batt1", "BSS22", "22", "2211", "500", "200", "30", "50", "50", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("04", "BATT3","BSS22", "22", "2211", "500", "200", "30", "50", "50", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("05", "BATT5", "BSS22", "22", "2211", "500", "200", "30", "50", "50", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("06", "BATT7", "BSS22", "22", "2211", "500", "200", "30", "50", "50", "22",  String(randvoltage), "20.561");towrite += ",";
                 addSlotsData("07", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
                 addSlotsData("08", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
                 addSlotsData("09", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
