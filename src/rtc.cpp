@@ -7,16 +7,18 @@ RTC_DS3231 rtc;
  * Function initRTC initializes RTC and adjusts date and time in case of power loss
  * TODO: Handle error in case RTC initialization fails
  */
-void initRTC(){
+bool initRTC(){
     if(rtc.begin()){
-        if ( rtc.lostPower()) {
-            Serial.println("initRTC -> rtc.cpp -> Readjusting RTC date and time");
+        if (rtc.lostPower()) {
+            log_d("Readjusting RTC date and time \r\n");
             rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // sets the clock to time when code was burned 
         }
-        Serial.println("initRTC -> rtc.cpp -> RTC initialization successful");
+        log_d("RTC initialization successful\r\n");
+        return true;
     }
     else{
-        Serial.println("initRTC -> rtc.cpp -> RTC initialization failed");
+        log_d("RTC initialization failed\r\n");
+        return false;
     }
 }
 
@@ -41,7 +43,7 @@ String getTime(){
     String SS = String(now.second(), DEC);
     if (SS.length() == 1){SS = "0" + SS; }
     return  (YYYY + "-" + mm + "-" + dd + " " + HH + ":" + MM + ":" + SS) ; 
-  }
+}
 
 /*
  * Function getTime2 returns time from RTC hardware in form of string.
@@ -69,4 +71,9 @@ String getNextDay(int iyear, int imonth, int iday){
     String dd = String(temp1.day(), DEC);
     if (dd.length() == 1){dd = "0" + dd; }
     return (YYYY + mm + dd);
+}
+
+String unixTime(){
+    DateTime now = rtc.now();
+    return String(now.unixtime());
 }
