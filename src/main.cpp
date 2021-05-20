@@ -91,6 +91,7 @@ void setup() {
         digitalWrite(RTC_LED, HIGH);
     }
     _set_esp_time();
+    log_i("ESP system time: %s", esp_sys_time.getDateTime().c_str());
     if(storage.init_storage()){
         log_d("storage initialization success!");
         digitalWrite(STORAGE_LED, HIGH);
