@@ -13,6 +13,7 @@
 //TODO: OPTIMIZATION: convert String to c string.
 //TODO: optimization of data that is to be saved and sent
 
+
 #define DATA_ACQUISITION_TIME 1000      //perform action every 1000ms
 #define DATA_MAX_LEN 1200   //bytes
 #define LED_1   2
@@ -90,7 +91,7 @@ void setup() {
     }
     wf.init();
     log_i("initialized wifi successfully");  
-    // setupCloudIoT();    //TODO: change this function and add wifi initialization
+    setupCloudIoT();    //TODO: change this function and add wifi initialization
     log_i("cloud iot setup complete");
 
     delay(3000);
@@ -110,7 +111,7 @@ void setup() {
     xTaskCreatePinnedToCore(vWifiTransfer, "Transfer data on Wifi", 10000, NULL, 1, &wifiTask, 0);
     xTaskCreatePinnedToCore(vBlCheck, "Bluetooth Commands", 10000, NULL, 2, &blTask1, 0);
     xTaskCreatePinnedToCore(vBlTransfer, "Bluetooth Transfer", 10000, NULL, 3, &blTask2, 0);
-    // xTaskCreatePinnedToCore(vStatusLed, "Status LED", 1000, NULL, 1, &ledTask, 1);
+    xTaskCreatePinnedToCore(vStatusLed, "Status LED", 1000, NULL, 1, &ledTask, 1);
     xTaskCreatePinnedToCore(vStorage, "Storage Handler", 10000, NULL, 2, &storageTask, 1);
     xTaskCreatePinnedToCore(vAcquireData, "Data Acquisition", 10000, NULL, 3, &dataTask1, 1);
     xTaskCreatePinnedToCore(vClientAuth, "CLient Authentication", 5000, NULL, 4, &clientTask, 1);
