@@ -4,6 +4,6 @@
 
 const char *registry_id = "EV-Registry";
 char *device_id;
-String EV_ID;
+String BSS_ID;
 
 #endif
