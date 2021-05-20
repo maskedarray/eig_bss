@@ -84,9 +84,9 @@ void setup() {
     digitalWrite(WIFI_LED, LOW);
     digitalWrite(STORAGE_LED, LOW);
 
-    // if(can.init_can()){
-    //     digitalWrite(CAN_LED, HIGH);
-    // }
+    if(can.init_can()){
+        digitalWrite(CAN_LED, HIGH);
+    }
     if(initRTC()){
         digitalWrite(RTC_LED, HIGH);
     }
@@ -158,7 +158,7 @@ void setup() {
     xTaskCreatePinnedToCore(vStorage, "Storage Handler", 7000, NULL, 2, &storageTask, 1);
     xTaskCreatePinnedToCore(vBlCheck, "Bluetooth Commands", 5000, NULL, 2, &blTask1, 0);
     xTaskCreatePinnedToCore(vBlTransfer, "Bluetooth Transfer", 5000, NULL, 3, &blTask2, 0);
-    xTaskCreatePinnedToCore(vWifiTransfer, "Transfer data on Wifi", 30000, NULL, 1, &wifiTask, 0);
+    xTaskCreatePinnedToCore(vWifiTransfer, "Transfer data on Wifi", 10000, NULL, 1, &wifiTask, 0);
 
     log_i("created all tasks");
 }
