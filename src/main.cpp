@@ -16,7 +16,7 @@
 #define DATA_ACQUISITION_TIME 1000      //perform action every 1000ms
 #define DATA_MAX_LEN 1200   //bytes
 #define LED_1   2
-#define EV_ID "LGA8977"
+#define BSS_ID "LGA8977"
 #define RTC_LED 14
 #define BT_LED 27
 #define STORAGE_LED 26
@@ -35,13 +35,14 @@
 // #include <sys/time.h>
 
 String towrite;
-TaskHandle_t dataTask1, blTask1, blTask2, storageTask, wifiTask, ledTask;
+TaskHandle_t dataTask1, blTask1, blTask2, storageTask, wifiTask, ledTask, clientTask;
 void vAcquireData( void *pvParameters );
 void vBlTransfer( void *pvParameters );
 void vBlCheck( void *pvParameters );
 void vStorage( void *pvParameters );
 void vWifiTransfer( void * pvParameters);
 void vStatusLed( void * pvParameters);
+void vClientAuth( void *pvParameters);
 int flag =0;
 
 
@@ -52,6 +53,7 @@ void addSlotsData(String B_Slot,String B_ID,String B_Auth, String B_Age,String B
             B_U_Cycles + "," + B_Temp + "," + B_SoC + "," + B_SoH + "," + B_RoC + "," + B_Vol + "," + B_Curr;
     return;
 }
+
 void IRAM_ATTR test(){
     flag++;
 }
@@ -77,19 +79,19 @@ void setup() {
         digitalWrite(RTC_LED, HIGH);
     }
     if(storage.init_storage()){
-        log_d("storage initialization success!\r\n");
+        log_d("storage initialization success!");
         digitalWrite(STORAGE_LED, HIGH);
     }
     else{   //TODO: handle when storage connection fails
         while(1){
-            log_d("storage initialization failed!\r\n");
+            log_d("storage initialization failed!");
             delay(1000);
         }
     }
     wf.init();
-    log_i("initialized wifi successfully\r\n");  
-    setupCloudIoT();    //TODO: change this function and add wifi initialization
-    log_i("cloud iot setup complete\r\n");
+    log_i("initialized wifi successfully");  
+    // setupCloudIoT();    //TODO: change this function and add wifi initialization
+    log_i("cloud iot setup complete");
 
     delay(3000);
     //set_system_time();      //timeout for response has been set to 20000 so slave initializes successfully 
@@ -105,14 +107,15 @@ void setup() {
     xSemaphoreGive(semaBlRx1);
     xSemaphoreGive(semaWifi1);
     
-    xTaskCreatePinnedToCore(vStatusLed, "Status LED", 1000, NULL, 1, &ledTask, 1);
-    xTaskCreatePinnedToCore(vAcquireData, "Data Acquisition", 5000, NULL, 3, &dataTask1, 1);
-    xTaskCreatePinnedToCore(vStorage, "Storage Handler", 5000, NULL, 2, &storageTask, 1);
-    xTaskCreatePinnedToCore(vBlCheck, "Bluetooth Commands", 5000, NULL, 2, &blTask1, 0);
-    xTaskCreatePinnedToCore(vBlTransfer, "Bluetooth Transfer", 5000, NULL, 3, &blTask2, 0);
-    xTaskCreatePinnedToCore(vWifiTransfer, "Transfer data on Wifi", 50000, NULL, 1, &wifiTask, 0);
+    xTaskCreatePinnedToCore(vWifiTransfer, "Transfer data on Wifi", 10000, NULL, 1, &wifiTask, 0);
+    xTaskCreatePinnedToCore(vBlCheck, "Bluetooth Commands", 10000, NULL, 2, &blTask1, 0);
+    xTaskCreatePinnedToCore(vBlTransfer, "Bluetooth Transfer", 10000, NULL, 3, &blTask2, 0);
+    // xTaskCreatePinnedToCore(vStatusLed, "Status LED", 1000, NULL, 1, &ledTask, 1);
+    xTaskCreatePinnedToCore(vStorage, "Storage Handler", 10000, NULL, 2, &storageTask, 1);
+    xTaskCreatePinnedToCore(vAcquireData, "Data Acquisition", 10000, NULL, 3, &dataTask1, 1);
+    xTaskCreatePinnedToCore(vClientAuth, "CLient Authentication", 5000, NULL, 4, &clientTask, 1);
     
-    log_i("created all tasks\r\n");
+    log_i("created all tasks");
 }
 
 void loop() {
@@ -132,38 +135,87 @@ void vAcquireData( void *pvParameters ){
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
     for(;;){    //infinite loop
+        log_v("Entering data acquisition task");
         xSemaphoreTake(semaAqData1, portMAX_DELAY); //semaphore to check if sending of data over bluetooth and storage has returned
         {
             //Dummy acquisition of data
             float randvoltage = 11 + (random(0,2000)/1000.0);
             towrite = "";                               //empty the string
             towrite += String("18:50") + ",";           //time
-            towrite += String(EV_ID) + ",";      //vehicle id
+            towrite += String(BSS_ID) + ",";             //vehicle id
             towrite += String("3000") + ",";            //vehicle rpm
             towrite += String("5.019") + ",";           //MCU voltage
             towrite += String("0.234") + ",";           //MCU CURRENT
             towrite += String("34.36") + ",";           //MCU Temperature
             //          B_Slot, B_ID, B_Auth,  B_Age, B_Type , B_M_Cycles, B_U_Cycles , B_Temp, B_SoC, B_SoH, B_RoD, B_Vol , B_Curr
             if(flag == 0){
-                log_i("currently sending data %d\r\n",flag);
-                addSlotsData("01", "batt1", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("02", "BATT3", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("03", "BATT5", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("04", "BATT7", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "26.561");//towrite += ",";
-            }
-            else if (flag == 1){
-                log_i("currently sending data %d\r\n",flag);
-                addSlotsData("0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");
-            }
-            else if (flag ==2){
-                log_i("currently sending data %d\r\n",flag);
-                addSlotsData("01", "BATT2", "BSS22", "22", "2211", "500", "200", "30", "90", "50", "22", String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("02", "BATT4", "BSS22", "22", "2211", "500", "200", "30", "90", "50", "22", String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("03", "BATT6", "BSS22", "22", "2211", "500", "200", "30", "90", "50", "22", String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("04", "BATT8", "BSS22", "22", "2211", "500", "200", "30", "90", "50", "22", String(randvoltage), "26.561");//towrite += ",";
+                addSlotsData("01", "1718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("02", "1718953130", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("03", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("04", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("05", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("06", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("07", "BATT2", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("08", "BATT4", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "26.561");towrite += ",";
+                addSlotsData("09", "BATT6", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("10", "BATT8", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("11", "1718953121", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("12", "1718953120", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
+                addSlotsData("13", "1718953119", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("14", "2718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("15", "1518953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("16", "1718253129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");
+            } else if (flag == 1){
+                addSlotsData("01", "1718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("02", "1718953130", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("03", "batt1", "BSS22", "22", "2211", "500", "200", "30", "50", "50", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("04", "BATT3","BSS22", "22", "2211", "500", "200", "30", "50", "50", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("05", "BATT5", "BSS22", "22", "2211", "500", "200", "30", "50", "50", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("06", "BATT7", "BSS22", "22", "2211", "500", "200", "30", "50", "50", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("07", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("08", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("09", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("10", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("11", "1718953121", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("12", "1718953120", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
+                addSlotsData("13", "1718953119", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("14", "2718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("15", "1518953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("16", "1718253129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");
+            } else if (flag == 2){
+                addSlotsData("01", "1718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("02", "1718953130", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("03", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("04", "1718953128", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
+                addSlotsData("05", "1718953127", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("06", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("07", "1718953125", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("08", "1718953124", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
+                addSlotsData("09", "1718953123", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("10", "1718953122", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("11", "1718953121", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("12", "1718953120", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
+                addSlotsData("13", "1718953119", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("14", "2718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("15", "1518953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("16", "1718253129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");
+            } else if (flag >= 3){
+                addSlotsData("01", "1718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("02", "1718953130", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("03", "1718953131", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("04", "1718953128", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
+                addSlotsData("05", "1718953127", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("06", "1718953126", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("07", "1718953125", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("08", "1718953124", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
+                addSlotsData("09", "1718953123", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("10", "1718953122", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("11", "1718953121", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("12", "1718953120", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
+                addSlotsData("13", "1718953119", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("14", "2718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("15", "1518953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
+                addSlotsData("16", "1718253129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");
             }
             //Now towrite string contains one valid string of CSV data chunk
         }
@@ -171,7 +223,7 @@ void vAcquireData( void *pvParameters ){
         xSemaphoreGive(semaBlTx1);      //signal to call bluetooth transfer function once
         xSemaphoreGive(semaStorage1);
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-        log_v("Stack usage of acquiredata Task: %d\r\n",(int)uxHighWaterMark);
+        log_v("Stack usage of acquiredata Task: %d",(int)uxHighWaterMark);
         vTaskDelayUntil(&xLastWakeTime, DATA_ACQUISITION_TIME);    //defines the data acquisition rate
     }   //end for
 }   //end vAcquireData
@@ -187,17 +239,18 @@ void vAcquireData( void *pvParameters ){
  */
 void vBlTransfer( void *pvParameters ){ //synced by the acquire data function
     for(;;){    //infinite loop
+        log_v("Entering bluetooth transfer task");
         xSemaphoreTake(semaBlTx1, portMAX_DELAY);   //for task sync with acquire data
         xSemaphoreTake(semaAqData1, portMAX_DELAY); //for copying towrite string
         String towrite_cpy;
         towrite_cpy = towrite;
         xSemaphoreGive(semaAqData1);
         xSemaphoreTake(semaBlRx1, portMAX_DELAY);
-        log_d("sending data over bluetooth \r\n");
+        log_d("sending data over bluetooth ");
         bt.send(towrite_cpy);
         xSemaphoreGive(semaBlRx1);
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-        log_v("Stack usage of bltransfer Task: %d\r\n", (int)uxHighWaterMark);
+        log_v("Stack usage of bltransfer Task: %d", (int)uxHighWaterMark);
     }   //end for
 }   //end vBlTransfer task
 
@@ -210,6 +263,7 @@ void vBlTransfer( void *pvParameters ){ //synced by the acquire data function
 void vBlCheck( void *pvParameters ){
     TickType_t xLastWakeTime_2 = xTaskGetTickCount();
     for(;;){
+        log_v("Entering bluetooth command task");
         xSemaphoreTake(semaWifi1, portMAX_DELAY);
         xSemaphoreTake(semaBlRx1, portMAX_DELAY);
         {
@@ -218,13 +272,24 @@ void vBlCheck( void *pvParameters ){
         xSemaphoreGive(semaBlRx1);
         xSemaphoreGive(semaWifi1);
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-        log_v("Stack usage of blcheck Task: %d\r\n",(int)uxHighWaterMark);
+        log_v("Stack usage of blcheck Task: %d",(int)uxHighWaterMark);
         vTaskDelayUntil(&xLastWakeTime_2, 0.1*DATA_ACQUISITION_TIME);
     }
 } // end vBlCheck
 
+void vClientAuth( void *pvParameters ){
+    for(;;){
+        log_v("Entering client authentication");
+        wf.client_auth();
+        vTaskDelay(500);
+        UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+        log_v("Stack usage of bltransfer Task: %d", (int)uxHighWaterMark);
+    }
+}
+
 void vStorage( void *pvParameters ){
     for(;;){    //infinite loop
+        log_v("Entering storage task");
         xSemaphoreTake(semaStorage1,portMAX_DELAY); //for syncing task with acquire
         xSemaphoreTake(semaAqData1, portMAX_DELAY); // make copy of data and stop data acquisition
         String towrite_cpy;
@@ -236,7 +301,7 @@ void vStorage( void *pvParameters ){
         }
         xSemaphoreGive(semaWifi1);  //resume the wifi transfer task
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-        log_v("Stack usage of Storage Task: %d\r\n",(int)uxHighWaterMark);
+        log_v("Stack usage of Storage Task: %d",(int)uxHighWaterMark);
     }   //end for
 }   //end vStorage task
 
@@ -245,7 +310,7 @@ void vWifiTransfer( void *pvParameters ){
         //check unsent data and send data over wifi
         //also take semaWifi1 when starting to send one chunk of data and give semaWifi1 when sending of one chunk of data is complete
         xSemaphoreTake(semaWifi1,portMAX_DELAY);
-        log_v("entering wifi task \r\n");
+        log_v("Entering wifi task ");
         if(wf.check_connection() && (storage.get_unsent_data(getTime2()) > 500))
         {
             for(int i=0; i<5; i++){
@@ -259,7 +324,7 @@ void vWifiTransfer( void *pvParameters ){
                     toread = storage.read_data();
                     // toread = "dummy string";
                     if (toread != "" && publishTelemetry(toread)){
-                        log_d("sent data to cloud \r\n");
+                        log_d("sent data to cloud ");
                         storage.mark_data(getTime2());
                     }
                 }
@@ -268,18 +333,19 @@ void vWifiTransfer( void *pvParameters ){
             vTaskDelay(1000);
         }
         else{
-            log_d("Wifi disconnected or no data to be sent! \r\n");
+            log_d("Wifi disconnected or no data to be sent! ");
             xSemaphoreGive(semaWifi1);
             vTaskDelay(10000);
         }
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-        log_v("Stack usage of Wifi Task: %d\r\n",(int)uxHighWaterMark);
+        log_v("Stack usage of Wifi Task: %d",(int)uxHighWaterMark);
         vTaskDelay(10);
     }   //end for
 }   //end vWifiTransfer task
 
 void vStatusLed( void * pvParameters){
     for(;;){    //infinite loop
+        log_v("Entering LED status task");
         if(bt.isConnected){
             digitalWrite(BT_LED,HIGH);
         }  

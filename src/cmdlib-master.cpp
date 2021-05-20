@@ -34,7 +34,7 @@ String parse_by_key(String message, int key)
     index = 0;
     if(key > comma_count)
     {
-        log_e("key exceeds number of entries \r\n");
+        log_e("key exceeds number of entries ");
         return "";
     }
     
@@ -76,62 +76,6 @@ bool command_3_newConn(String message)
 };
 
 /**
- * @brief This command initiates battery swap mode and saves the initial cycles
- * for subtraction when the battery swap mode is exited
- *
- * @return true if initialization is successful
- * @return false otherwise
- */
-bool command_5_enterSwap()
-{
-    WiFi.begin(DEFAULT_BSS_WIFI_SSID,DEFAULT_BSS_WIFI_PASS);
-    vTaskDelay(10000);
-    String ret = "<40,";
-    if(WiFi.isConnected() == true){
-        //handle here
-        WiFiClient client;
-        if(client.connect("192.168.0.107",80)){
-            log_d("client connected \r\n");
-            client.print("client1711\n");
-            long time_start = millis();
-            long time_stop = millis();
-            while(time_stop - time_start < 5000){
-                if(client.available()){
-                    ret += client.readStringUntil('\n');
-                    log_d("response received \r\n");
-                    break;
-                }
-                time_stop = millis();
-                vTaskDelay(10);
-            }
-            client.stop();
-            log_d("client disconnected \r\n");
-        }
-    }
-    else{
-        log_e("could not connect to bss wifi \r\n");
-    }
-    WiFi.disconnect(false,true);
-    ret += ">";
-    bt.send(ret);
-    log_i("message sent to master: %s\r\n",ret.c_str());
-    return true;
-};
-
-/**
- * @brief This command exits battery swap mode and takes the final cycles of the
- * swapped batteries and sends the difference via bluetooth.  
- *
- * @return true if sending is successful
- * @return false otherwise
- */
-bool command_6_exitSwap()
-{
-    log_i("exited battery swap mode \r\n");
-    return true;
-};
-
-/**
  * @brief this command tells the slave to check the wifi connection and send the
  * status back to the master
  *
@@ -154,9 +98,23 @@ bool command_7_checkWifi()
 bool command_8_getTime()
 {
     String ret = unixTime();
-    log_d("The returned time is: %s\r\n", ret);
+    log_d("The returned time is: %s", ret);
     bt.send(ret);
     return true;
+}
+
+/**
+ * @brief This command implements battery ejection upon bluetooth command
+ * 
+ * @param message the received string containing the battery to be ejected
+ * @return true if eject is successful
+ * @return false otherwise
+ */
+bool command_9_ejectBattery(String message){
+    int slot_num = parse_by_key(message,1).toInt();
+    log_i("ejected battery %d",slot_num);
+    return true;
+    //eject battery by handling the bss through CAN
 }
 
 /**
@@ -174,31 +132,29 @@ bool command_bt()
     
     if(message.length() > 0)
     {
-        log_i("message received: %s\r\n", message.c_str());
+        log_i("message received: %s", message.c_str());
         int ID = (10 * ((uint8_t)message[1] - 48)) + ((uint8_t)message[2] - 48);
-        log_d("the the ID sent is: %d\r\n", ID);
+        log_d("the the ID sent is: %d", ID);
         if(ID > 0 && ID < 100)
         {
             switch(ID)
             {
                 case 3: // connect to new credentials
                     return command_3_newConn(message);
-                case 5: // enter battery swapping mode
-                    return command_5_enterSwap();
-                case 6: // exit battery swapping mode
-                    return command_6_exitSwap();
                 case 7: // check wifi
                     return command_7_checkWifi();
                 case 8: // check time
                     return command_8_getTime();
+                case 9: // eject specified battery
+                    return command_9_ejectBattery(message);
                 default:
-                    log_e("invalid ID \r\n");
+                    log_e("invalid ID ");
                     return false;
             }
         }
         else
         {
-            log_e("entered invalid ID \r\n");
+            log_e("entered invalid ID ");
             return false;
         }
 

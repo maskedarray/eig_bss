@@ -1,5 +1,11 @@
 #include <ESPWiFi.h>
-//TODO: optimize wifi reconnection time. 
+
+WiFiServer server(80);
+
+/**
+ * TODO: Optimize reconnection time
+ */
+
 /**
  * This function initializes the ESP wifi module with the requisite
  * configurations. It attempts to connect to a default SSID and password and
@@ -7,9 +13,45 @@
  */
 bool ESP_WiFi::init()
 {
-    log_i("updating AP list from SD card \r\n");
+    log_i("updating AP list from SD card ");
     this -> update_APs();
     return true;
+}
+
+/**
+ * @brief This function verifies an incoming ev using the client ID
+ * 
+ * @return true if authentication is succcessful 
+ * @return false otherwise
+ */
+bool ESP_WiFi::client_auth()
+{
+    WiFiClient client = server.available();   // listen for incoming clients
+
+    if (client) 
+    {                             // if you get a client,
+        Serial.println("New Client.");           // print a message out the serial port
+        while (client.connected()) 
+        {            // loop while the client's connected
+            if (client.available()) 
+            {             // if there's bytes to read from the client,
+                String cl = client.readStringUntil('\n');             // read a byte, then
+                Serial.println(cl);                    // print it out the serial monitor
+                if(cl == "client1711")
+                {
+                    client.print("KgoLFHfaayTnPKEy26iaUqO5Qyl1\n");
+                    client.stop();
+                }
+            }
+        }
+        // close the connection:
+        Serial.println("Client Disconnected.");
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 /**
@@ -26,13 +68,13 @@ void ESP_WiFi::update_APs()
     while(!SSID_List[i].isEmpty() && i < 10)
     {
         access_points->addAP(SSID_List[i].c_str(), Password_List[i].c_str());
-        log_v("Added AP \r\n");
-        log_v("SSID: %s \r\n",SSID_List[i].c_str());
-        log_v("Password: %s \r\n", Password_List[i].c_str());
+        log_v("Added AP ");
+        log_v("SSID: %s ",SSID_List[i].c_str());
+        log_v("Password: %s ", Password_List[i].c_str());
         i++;
     }
     credential_length = i;
-    log_v("credential length: %u \r\n", credential_length);
+    log_v("credential length: %u ", credential_length);
 }
 
 /**
@@ -62,12 +104,12 @@ bool ESP_WiFi::create_new_connection(const char *SSID, const char *Password)
     }
 
     // Connection has been established
-    log_v("credential_length = %u \r\n", credential_length);
+    log_v("credential_length = %u ", credential_length);
     if(credential_length >= 10) // Check if AP data limit reached
     {
         // clear all data and write single AP along with default
         int i = 0;
-        log_v("recreating AP data \r\n");
+        log_v("recreating AP data ");
         while(!SSID_List[i].isEmpty() || !Password_List[i].isEmpty())
         {
             SSID_List[i].clear();
@@ -86,7 +128,7 @@ bool ESP_WiFi::create_new_connection(const char *SSID, const char *Password)
         }
         else
         {
-            log_e("Failed to rewrite storage APs or remake access points \r\n");
+            log_e("Failed to rewrite storage APs or remake access points ");
             return false;
         }
     }
@@ -100,15 +142,15 @@ bool ESP_WiFi::create_new_connection(const char *SSID, const char *Password)
         Serial.println(SSID_List[i]);
         if((String) SSID == SSID_List[i])
         {
-            log_d("SSID match found \r\n");
+            log_d("SSID match found ");
             if((String) Password == Password_List[i]) // Same credentials were entered
             {
-                log_e("Credentials already exist \r\n");
+                log_e("Credentials already exist ");
                 return false;
             }
             else // Password was different
             {
-                log_i("Updating Password Only \r\n");
+                log_i("Updating Password Only ");
                 // add code to update all lists within if condition (must be
                 // type bool)
                 Password_List[i] = (String) Password;
@@ -117,10 +159,10 @@ bool ESP_WiFi::create_new_connection(const char *SSID, const char *Password)
                     if(storage.rewrite_storage_APs(SSID_List, Password_List))
                         return true;
                     else
-                        log_e("Error in rewriting storage APs \r\n");
+                        log_e("Error in rewriting storage APs ");
                 }
                 else
-                    log_e("error in remaking access points \r\n");
+                    log_e("error in remaking access points ");
             }
         }
     }
@@ -144,7 +186,7 @@ bool ESP_WiFi::remake_access_points()
     while(!SSID_List[i].isEmpty() && i < 10)
     {
         access_points->addAP(SSID_List[i].c_str(), Password_List[i].c_str());
-        log_v("%s and %s added \r\n", SSID_List[i].c_str(), Password_List[i].c_str());
+        log_v("%s and %s added ", SSID_List[i].c_str(), Password_List[i].c_str());
         i++;
     }
     return true;
@@ -157,11 +199,11 @@ bool ESP_WiFi::remake_access_points()
 bool ESP_WiFi::connect_to_nearest()
 {
     if(access_points->run() == WL_CONNECTED){
-        log_i("Connection established \r\n");
+        log_i("Connection established ");
         return true;
     }
     else{
-        log_e("Connection timed out \r\n");
+        log_e("Connection timed out ");
         return false;
     }
 }
@@ -182,7 +224,7 @@ bool ESP_WiFi::check_connection()
     }
     else
     {
-        log_e("WiFi not connected. Establishing connection \r\n");
+        log_e("WiFi not connected. Establishing connection ");
         if(this->connect_to_nearest()){
             return true;
         } else {
