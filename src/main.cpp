@@ -107,7 +107,7 @@ void setup() {
         settings__.begin("ev-app", false);
         bt.bluetooth_name = settings__.getString("bt-name", "");
         bt.bluetooth_password = settings__.getString("bt-pass","");
-        EV_ID = bt.bluetooth_name;
+        BSS_ID = bt.bluetooth_name;
         device_id = new char[30];
         bt.bluetooth_name.toCharArray(device_id, strlen(bt.bluetooth_name.c_str()) + 1);
         if(bt.bluetooth_name != "" && bt.bluetooth_password != ""){                             //settings saved previously
@@ -137,7 +137,7 @@ void setup() {
     setupCloudIoT();    //TODO: change this function and add wifi initialization
     log_i("cloud iot setup complete");
 
-    delay(3000);
+
     //set_system_time();      //timeout for response has been set to 20000 so slave initializes successfully 
     attachInterrupt(0, test, FALLING);
 
@@ -151,14 +151,13 @@ void setup() {
     xSemaphoreGive(semaBlRx1);
     xSemaphoreGive(semaWifi1);
     
-    xTaskCreatePinnedToCore(vWifiTransfer, "Transfer data on Wifi", 10000, NULL, 1, &wifiTask, 0);
-    xTaskCreatePinnedToCore(vBlCheck, "Bluetooth Commands", 10000, NULL, 2, &blTask1, 0);
-    xTaskCreatePinnedToCore(vBlTransfer, "Bluetooth Transfer", 10000, NULL, 3, &blTask2, 0);
     xTaskCreatePinnedToCore(vStatusLed, "Status LED", 1000, NULL, 1, &ledTask, 1);
-    xTaskCreatePinnedToCore(vStorage, "Storage Handler", 10000, NULL, 2, &storageTask, 1);
-    xTaskCreatePinnedToCore(vAcquireData, "Data Acquisition", 10000, NULL, 3, &dataTask1, 1);
-    xTaskCreatePinnedToCore(vClientAuth, "CLient Authentication", 5000, NULL, 4, &clientTask, 1);
-    
+    xTaskCreatePinnedToCore(vAcquireData, "Data Acquisition", 3000, NULL, 3, &dataTask1, 1);
+    xTaskCreatePinnedToCore(vStorage, "Storage Handler", 5000, NULL, 2, &storageTask, 1);
+    xTaskCreatePinnedToCore(vBlCheck, "Bluetooth Commands", 5000, NULL, 2, &blTask1, 0);
+    xTaskCreatePinnedToCore(vBlTransfer, "Bluetooth Transfer", 3000, NULL, 3, &blTask2, 0);
+    xTaskCreatePinnedToCore(vWifiTransfer, "Transfer data on Wifi", 10000, NULL, 1, &wifiTask, 0);
+
     log_i("created all tasks");
 }
 
