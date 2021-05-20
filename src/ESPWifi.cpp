@@ -1,11 +1,5 @@
 #include <ESPWiFi.h>
-
-WiFiServer server(80);
-
-/**
- * TODO: Optimize reconnection time
- */
-
+//TODO: optimize wifi reconnection time.
 /**
  * This function initializes the ESP wifi module with the requisite
  * configurations. It attempts to connect to a default SSID and password and
@@ -16,42 +10,6 @@ bool ESP_WiFi::init()
     log_i("updating AP list from SD card ");
     this -> update_APs();
     return true;
-}
-
-/**
- * @brief This function verifies an incoming ev using the client ID
- * 
- * @return true if authentication is succcessful 
- * @return false otherwise
- */
-bool ESP_WiFi::client_auth()
-{
-    WiFiClient client = server.available();   // listen for incoming clients
-
-    if (client) 
-    {                             // if you get a client,
-        Serial.println("New Client.");           // print a message out the serial port
-        while (client.connected()) 
-        {            // loop while the client's connected
-            if (client.available()) 
-            {             // if there's bytes to read from the client,
-                String cl = client.readStringUntil('\n');             // read a byte, then
-                Serial.println(cl);                    // print it out the serial monitor
-                if(cl == "client1711")
-                {
-                    client.print("KgoLFHfaayTnPKEy26iaUqO5Qyl1\n");
-                    client.stop();
-                }
-            }
-        }
-        // close the connection:
-        Serial.println("Client Disconnected.");
-        return true;
-    }
-    else
-    {
-        return false;
-    }
 }
 
 /**

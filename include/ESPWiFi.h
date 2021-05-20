@@ -27,7 +27,6 @@ class ESP_WiFi
         String Password_List[10];
         WiFiMulti *access_points;
         bool init();
-        bool client_auth();
         bool create_new_connection(const char *SSID, const char *Password);
         bool connect_to_nearest();
         bool check_connection();
