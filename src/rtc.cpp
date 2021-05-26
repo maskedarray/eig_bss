@@ -10,7 +10,7 @@ ESP32Time esp_sys_time;
  */
 bool initRTC(){
     if(rtc.begin()){
-        rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // sets the clock to time when code was burned 
+        rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // hard reset for time during code burn
         if (rtc.lostPower()) {
             log_d("Readjusting RTC date and time ");
             rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // sets the clock to time when code was burned 

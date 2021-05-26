@@ -52,10 +52,10 @@ FirebaseData firebaseData;
 
 
 SemaphoreHandle_t semaAqData1, semaBlTx1, semaBlRx1, semaStorage1, semaWifi1;
-void addSlotsData(String B_Slot,String B_ID,String B_Auth, String B_Age,String B_Type ,String B_M_Cycles ,String B_U_Cycles , 
-                    String B_Temp, String B_SoC, String B_SoH, String B_RoC,String B_Vol ,String B_Curr){
-    towrite += B_Slot + "," + B_ID + "," + B_Auth + "," + B_Age + "," + B_Type + "," + B_M_Cycles + "," + 
-            B_U_Cycles + "," + B_Temp + "," + B_SoC + "," + B_SoH + "," + B_RoC + "," + B_Vol + "," + B_Curr;
+void addSlotsData(String B_Slot,String B_ID,String B_U_Cycles , 
+                    String B_Temp, String B_SoC, String B_SoH,String B_Vol ,String B_Curr){
+    towrite += B_Slot + "," + B_ID + "," +
+            B_U_Cycles + "," + B_Temp + "," + B_SoC + "," + B_SoH + "," + B_Vol + "," + B_Curr;
     return;
 }
 void IRAM_ATTR test(){
@@ -128,7 +128,7 @@ void setup() {
                 settings__.putString("bt-name", tmpbtname); 
             if(Firebase.getString(firebaseData, "/" + mac + "/bluetoothPass", tmpbtpass))
                 settings__.putString("bt-pass", tmpbtpass);
-            log_i("got data from firebase\r\nbluetooth name: %s\r\n bluetooth password: %s",tmpbtname.c_str(), tmpbtpass.c_str());
+            log_i("got data from firebase\r\nbluetooth name: %s\r\nbluetooth password: %s",tmpbtname.c_str(), tmpbtpass.c_str());
             settings__.end();
             log_i("restarting");
             ESP.restart();
@@ -181,85 +181,52 @@ void vAcquireData( void *pvParameters ){
 
     for(;;){    //infinite loop
         xSemaphoreTake(semaAqData1, portMAX_DELAY); //semaphore to check if sending of data over bluetooth and storage has returned
+        log_i("getting data from CAN");
         {
             //Dummy acquisition of data
             float randvoltage = 11 + (random(0,2000)/1000.0);
             towrite = "";                               //empty the string
             towrite += String(getTime()) + ",";           //time
             towrite += String(BSS_ID) + ",";             //vehicle id
+            towrite += String("5.019") + ",";           //BSS voltage
+            towrite += String("0.234") + ",";           //BSS CURRENT
             towrite += String("3000") + ",";            //vehicle rpm
-            towrite += String("5.019") + ",";           //MCU voltage
-            towrite += String("0.234") + ",";           //MCU CURRENT
             towrite += String("34.36") + ",";           //MCU Temperature
-            //          B_Slot, B_ID, B_Auth,  B_Age, B_Type , B_M_Cycles, B_U_Cycles , B_Temp, B_SoC, B_SoH, B_RoD, B_Vol , B_Curr
+            //          S1_B_Slot, S1_B_ID, S1_B_U_Cylcles, S1_B_Temp, S1_B_SoC, S1_B_SoH, S1_B_Vol, S1_B_Curr,
             if(flag == 0){
-                addSlotsData("01", "124", "1", "1", "1", "1", "200", "30", "80", "50", "1", "12.371", "20.561");towrite += ",";
-                addSlotsData("02", "453", "1", "1", "1", "1", "200", "30", "80", "50", "1", "12.371", "20.561");towrite += ",";
-                addSlotsData("03", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("04", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("05", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("06", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("07", "BATT2", "1", "1", "1", "500", "200", "30", "80", "50", "1", String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("08", "BATT4", "1", "1", "1", "500", "200", "30", "80", "50", "1", String(randvoltage), "26.561");towrite += ",";
-                addSlotsData("09", "BATT6", "1", "1", "1", "500", "200", "30", "80", "50", "1", String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("10", "BATT8", "1", "1", "1", "500", "200", "30", "80", "50", "1", String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("11", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("12", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("13", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("14", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("15", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("16", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");
+                addSlotsData("01", "124", "1", "1", "1", "1", "200", "30");towrite += ",";
+                addSlotsData("02", "453", "1", "1", "1", "1", "200", "30");towrite += ",";
+                addSlotsData("03", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("04", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("05", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("06", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("07", "BATT2", "BSS22", "30", "80", "22", String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("08", "BATT4", "BSS22", "30", "80", "22", String(randvoltage), "26.561");towrite += ",";
+                addSlotsData("09", "BATT6", "BSS22", "30", "80", "22", String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("10", "BATT8", "BSS22", "30", "80", "22", String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("11", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("12", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("13", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("14", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("15", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("16", "0", "0", "0", "0", "0", "0", "0");
             } else if (flag >= 1){
-                addSlotsData("01", "782", "1", "1", "1", "500", "200", "30", "80", "50", "1", "12.371", "20.561");towrite += ",";
-                addSlotsData("02", "478", "1", "1", "1", "500", "200", "30", "80", "50", "1", "12.371", "20.561");towrite += ",";
-                addSlotsData("03", "BATT1", "1", "1", "1", "1", "200", "30", "50", "50", "1",  String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("04", "BATT3", "1", "1", "1", "1", "200", "30", "50", "50", "1",  String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("05", "BATT5", "1", "1", "1", "1", "200", "30", "50", "50", "1",  String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("06", "BATT7", "1", "1", "1", "1", "200", "30", "50", "50", "1",  String(randvoltage), "20.561");towrite += ",";
-                addSlotsData("07", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("08", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("09", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("10", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("11", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("12", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("13", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("14", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("15", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("16", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");
-            } else if (flag == 2){
-                addSlotsData("01", "1718953129", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
-                addSlotsData("02", "1718953130", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
-                addSlotsData("03", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("04", "1718953128", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "26.561");towrite += ",";
-                addSlotsData("05", "1718953127", "BSS22", "22", "2211", "500", "200", "30", "80", "50", "22", "12.371", "20.561");towrite += ",";
-                addSlotsData("06", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("07", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("08", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("09", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("10", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("11", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("12", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("13", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("14", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("15", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("16", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");
-            } else if (flag >= 3){
-                addSlotsData("01", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("02", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("03", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("04", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("05", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("06", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("07", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("08", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("09", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("10", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("11", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("12", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("13", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("14", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("15", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("16", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0");
+                addSlotsData("01", "124", "1", "1", "1", "1", "200", "30");towrite += ",";
+                addSlotsData("02", "453", "1", "1", "1", "1", "200", "30");towrite += ",";
+                addSlotsData("03", "BATT1", "30", "80", "40", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("04", "BATT3", "30", "80", "40", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("05", "BATT5", "30", "80", "40", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("06", "BATT7", "30", "80", "40", "22",  String(randvoltage), "20.561");towrite += ",";
+                addSlotsData("07", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("08", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("09", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("10", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("11", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("12", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("13", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("14", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("15", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
+                addSlotsData("16", "0", "0", "0", "0", "0", "0", "0");
             }
             //Now towrite string contains one valid string of CSV data chunk
         }
@@ -289,7 +256,7 @@ void vBlTransfer( void *pvParameters ){ //synced by the acquire data function
         towrite_cpy = towrite;
         xSemaphoreGive(semaAqData1);
         xSemaphoreTake(semaBlRx1, portMAX_DELAY);
-        log_d("sending data over bluetooth ");
+        log_i("sending data over bluetooth ");
         bt.send(towrite_cpy);
         xSemaphoreGive(semaBlRx1);
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
@@ -305,10 +272,18 @@ void vBlTransfer( void *pvParameters ){ //synced by the acquire data function
  */
 void vBlCheck( void *pvParameters ){
     TickType_t xLastWakeTime_2 = xTaskGetTickCount();
+    int _counter = 0;
     for(;;){
         xSemaphoreTake(semaWifi1, portMAX_DELAY);
         xSemaphoreTake(semaBlRx1, portMAX_DELAY);
         {
+            if(_counter < 10){
+                _counter += 1;
+            }
+            else{
+                _counter = 0;
+                log_i("checking bluetooth commands");
+            }
             command_bt();
         }
         xSemaphoreGive(semaBlRx1);
@@ -329,6 +304,7 @@ void vStorage( void *pvParameters ){
         xSemaphoreTake(semaWifi1,portMAX_DELAY);    //wait for wifi transfer task to finish
         {
             storage.write_data(getTime2(), towrite_cpy);
+            log_i("data written to storage");
         }
         xSemaphoreGive(semaWifi1);  //resume the wifi transfer task
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
@@ -337,6 +313,7 @@ void vStorage( void *pvParameters ){
 }   //end vStorage task
 
 void vWifiTransfer( void *pvParameters ){
+    int _counter = 0;
     for(;;){    //infinite loop
         //check unsent data and send data over wifi
         //also take semaWifi1 when starting to send one chunk of data and give semaWifi1 when sending of one chunk of data is complete
@@ -356,15 +333,20 @@ void vWifiTransfer( void *pvParameters ){
                     // toread = "dummy string";
                     if (toread != "" && publishTelemetry(toread)){
                         log_d("sent data to cloud ");
+                        _counter += 1;
                         storage.mark_data(getTime2());
                     }
                 }
+            }
+            if (_counter >= 5 ){
+                _counter = 0;
+                log_i("sent multiple data chunks to cloud");
             }
             xSemaphoreGive(semaWifi1);
             vTaskDelay(1000);
         }
         else{
-            log_d("Wifi disconnected or no data to be sent! ");
+            log_i("Wifi disconnected or no data to be sent! ");
             xSemaphoreGive(semaWifi1);
             vTaskDelay(10000);
         }
