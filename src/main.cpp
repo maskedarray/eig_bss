@@ -231,6 +231,8 @@ void vAcquireData( void *pvParameters ){
                 addSlotsData("14", "453", "1", "1", "86", "40", "200", "30");towrite += ",";
                 addSlotsData("15", "124", "1", "1", "92", "40", "200", "30");towrite += ",";
                 addSlotsData("16", "453", "1", "1", "83", "40", "200", "30");
+            }   else if (flag >=2){
+                flag = 0;
             }
             //Now towrite string contains one valid string of CSV data chunk
         }
