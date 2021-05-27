@@ -59,7 +59,11 @@ void addSlotsData(String B_Slot,String B_ID,String B_U_Cycles ,
     return;
 }
 void IRAM_ATTR test(){
-    flag++;
+    static unsigned long prev_interrupt_time;
+    unsigned long interrupt_time = millis();
+    if(interrupt_time - prev_interrupt_time > 500)
+        flag++;
+    prev_interrupt_time = interrupt_time;
 }
 
 void setup() {
@@ -194,8 +198,8 @@ void vAcquireData( void *pvParameters ){
             towrite += String("34.36") + ",";           //MCU Temperature
             //          S1_B_Slot, S1_B_ID, S1_B_U_Cylcles, S1_B_Temp, S1_B_SoC, S1_B_SoH, S1_B_Vol, S1_B_Curr,
             if(flag == 0){
-                addSlotsData("01", "124", "1", "1", "1", "1", "200", "30");towrite += ",";
-                addSlotsData("02", "453", "1", "1", "1", "1", "200", "30");towrite += ",";
+                addSlotsData("01", "124", "1", "1", "90", "1", "200", "30");towrite += ",";
+                addSlotsData("02", "453", "1", "1", "86", "1", "200", "30");towrite += ",";
                 addSlotsData("03", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
                 addSlotsData("04", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
                 addSlotsData("05", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
@@ -206,10 +210,10 @@ void vAcquireData( void *pvParameters ){
                 addSlotsData("10", "BATT8", "BSS22", "30", "80", "22", String(randvoltage), "20.561");towrite += ",";
                 addSlotsData("11", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
                 addSlotsData("12", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("13", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("14", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("15", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("16", "0", "0", "0", "0", "0", "0", "0");
+                addSlotsData("13", "124", "1", "1", "90", "40", "200", "30");towrite += ",";
+                addSlotsData("14", "453", "1", "1", "86", "40", "200", "30");towrite += ",";
+                addSlotsData("15", "124", "1", "1", "92", "40", "200", "30");towrite += ",";
+                addSlotsData("16", "453", "1", "1", "83", "40", "200", "30");
             } else if (flag >= 1){
                 addSlotsData("01", "124", "1", "1", "1", "1", "200", "30");towrite += ",";
                 addSlotsData("02", "453", "1", "1", "1", "1", "200", "30");towrite += ",";
@@ -223,10 +227,10 @@ void vAcquireData( void *pvParameters ){
                 addSlotsData("10", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
                 addSlotsData("11", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
                 addSlotsData("12", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("13", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("14", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("15", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
-                addSlotsData("16", "0", "0", "0", "0", "0", "0", "0");
+                addSlotsData("13", "124", "1", "1", "90", "40", "200", "30");towrite += ",";
+                addSlotsData("14", "453", "1", "1", "86", "40", "200", "30");towrite += ",";
+                addSlotsData("15", "124", "1", "1", "92", "40", "200", "30");towrite += ",";
+                addSlotsData("16", "453", "1", "1", "83", "40", "200", "30");
             }
             //Now towrite string contains one valid string of CSV data chunk
         }
