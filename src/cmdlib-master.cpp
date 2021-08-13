@@ -63,17 +63,18 @@ String parse_by_key(String message, int key)
  * in the list of APs.
  *
  * @param message the received string
- * @return true if connection instruction is sent
- * @return false otherwise
+ * @return empty string if connection instruction is sent
+ * @return error string otherwise
  */
-bool command_3_newConn(String message)
+String command_3_newConn(String message)
 {
     bool ret = false;
     String tempssid = parse_by_key(message, 1);
     String temppass = parse_by_key(message, 2);
     ret = wf.create_new_connection(tempssid.c_str(),temppass.c_str());
-    return ret;
+    return ret ? "" : "error";
 };
+
 
 /**
  * @brief this command tells the slave to check the wifi connection and send the
@@ -82,54 +83,49 @@ bool command_3_newConn(String message)
  * @return true if command has been sent
  * @return false if command could not be sent
  */
-bool command_7_checkWifi()
+String command_7_checkWifi()
 {
     bool ret = WiFi.isConnected();
     log_i("the connection status is: %d\n\r", ret);
-    return ret;
+    return ret ? "connected" : "disconnected";
 }
 
 /**
  * @brief This command returns the unix time
  * 
- * @return true if command returns successful
- * @return false otherwise
+ * @return as string for the current unix time
  */
-bool command_8_getTime()
+String command_8_getTime()
 {
     String ret = unixTime();
     log_d("The returned time is: %s", ret);
-    bt.send(ret);
-    return true;
+    // bt.send(ret);
+    return ret;
 }
 
 /**
  * @brief This command implements battery ejection upon bluetooth command
  * 
  * @param message the received string containing the battery to be ejected
- * @return true if eject is successful
- * @return false otherwise
+ * @return success message if eject is successful
+ * @return error otherwise
  */
-bool command_9_ejectBattery(String message){
+String command_9_ejectBattery(String message){
     int slot_num = parse_by_key(message,1).toInt();
     log_i("ejected battery %d",slot_num);
-    return true;
+    return "Battery ejection succesful";
     //eject battery by handling the bss through CAN
 }
 
 /**
  * @brief This is the main wrapper function that is called in a loop and checks
- * for commands on bluetooth. It also checks if authorization has been granted
- * for different functions and resets authorization after every command call.
+ * for commands on bluetooth.
  *
- * @return true if command returns true
- * @return false otherwise
+ * @return the command response string
  */
-bool command_bt()
+String command_bt(String message)
 {
-    String message = "";
-    message = bt.check_bluetooth();
-    
+
     if(message.length() > 0)
     {
         log_i("message received: %s", message.c_str());
@@ -149,18 +145,18 @@ bool command_bt()
                     return command_9_ejectBattery(message);
                 default:
                     log_e("invalid ID ");
-                    return false;
+                    return "error";
             }
         }
         else
         {
             log_e("entered invalid ID ");
-            return false;
+            return "error";
         }
 
     }
     else
     {
-        return false;
+        return "error";
     }
 }
