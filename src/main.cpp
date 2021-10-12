@@ -23,7 +23,8 @@
 #define CAN_LED 25
 #define WIFI_LED 33
 #define FIREBASE_HOST "batteryswapstation.firebaseio.com" 
-#define FIREBASE_AUTH "3v7E1QgsqLjEUx5KX1mw6kaj0ONb1IrtJ5HyNxCO" 
+#define FIREBASE_AUTH "3v7E1QgsqLjEUx5KX1mw6kaj0ONb1IrtJ5HyNxCO"
+// #define UPDATE_ESP // Uncomment this line if you want ESP to check for update
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
@@ -37,6 +38,10 @@
 #include "Preferences.h"
 #include "defines.h"
 #include "FirebaseESP32.h"
+
+#ifdef UPDATE_ESP
+    #include "OTA.h"
+#endif
 
 Preferences settings__;
 String towrite;
@@ -116,7 +121,19 @@ void setup() {
     }
     wf.init();
     wf.check_connection();
-    log_i("initialized wifi successfully"); 
+    log_i("initialized wifi successfully");
+
+    #ifdef UPDATE_ESP
+        // Check if we need to download a new version
+        String downloadUrl = getDownloadUrl();
+        if (downloadUrl.length() > 0)
+        {
+            bool success = downloadUpdate(downloadUrl);
+            if (!success)
+                log_i("Error updating device\n");
+        }
+    #endif
+
     if(initRTC()){
         digitalWrite(RTC_LED, HIGH);
         flags[rtc_f] = 1;
