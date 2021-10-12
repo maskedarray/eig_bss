@@ -52,7 +52,7 @@ void vLedBlink( void * blinkDelay);
 void vTimeSync( void * pvParameters);
 int dataflag =0;
 FirebaseData firebaseData;
-String EV_ID;
+String BSS_ID;
 byte flags[16];
 
 SemaphoreHandle_t semaAqData1, semaBlTx1, semaBlRx1, semaStorage1, semaWifi1;
@@ -140,7 +140,7 @@ void setup() {
         settings__.begin("ev-app", false);
         bt.bluetooth_name = settings__.getString("bt-name", "");
         bt.bluetooth_password = settings__.getString("bt-pass","");
-        EV_ID = bt.bluetooth_name;
+        BSS_ID = bt.bluetooth_name;
         device_id = new char[30];
         bt.bluetooth_name.toCharArray(device_id, strlen(bt.bluetooth_name.c_str()) + 1);
         if(bt.bluetooth_name != "" && bt.bluetooth_password != ""){                             //settings saved previously
@@ -199,11 +199,11 @@ void setup() {
     flags[cloud_f] = 0;
     flags[cloud_blink_f] = 0;
 
-    //xTaskCreatePinnedToCore(vTimeSync, "Time Sync", 2000, NULL, 1, &timeSyncTask, 1);
+    // xTaskCreatePinnedToCore(vTimeSync, "Time Sync", 2000, NULL, 1, &timeSyncTask, 1);
     xTaskCreatePinnedToCore(vStatusLed, "Status LED", 5000, NULL, 1, &ledTask, 1);
     xTaskCreatePinnedToCore(vAcquireData, "Data Acquisition", 5000, NULL, 3, &dataTask1, 1);
     xTaskCreatePinnedToCore(vStorage, "Storage Handler", 5000, NULL, 2, &storageTask, 1);
-    xTaskCreatePinnedToCore(vBlCheck, "Bluetooth Commands", 4000, NULL, 2, &blTask1, 0);
+    // xTaskCreatePinnedToCore(vBlCheck, "Bluetooth Commands", 4000, NULL, 2, &blTask1, 0);
     xTaskCreatePinnedToCore(vBlTransfer, "Bluetooth Transfer", 4000, NULL, 3, &blTask2, 0);
     xTaskCreatePinnedToCore(vWifiTransfer, "Transfer data on Wifi", 7000, NULL, 1, &wifiTask, 0);
     
@@ -241,7 +241,7 @@ void vAcquireData( void *pvParameters ){
             towrite += String("3000") + ",";            //vehicle rpm
             towrite += String("34.36") + ",";           //MCU Temperature
             //          S1_B_Slot, S1_B_ID, S1_B_U_Cylcles, S1_B_Temp, S1_B_SoC, S1_B_SoH, S1_B_Vol, S1_B_Curr,
-            if(flag == 0){
+            if(dataflag == 0){
                 addSlotsData("01", "124", "1", "1", "90", "1", "200", "30");towrite += ",";
                 addSlotsData("02", "453", "1", "1", "86", "1", "200", "30");towrite += ",";
                 addSlotsData("03", "0", "0", "0", "0", "0", "0", "0");towrite += ",";
@@ -258,7 +258,7 @@ void vAcquireData( void *pvParameters ){
                 addSlotsData("14", "453", "1", "1", "86", "40", "200", "30");towrite += ",";
                 addSlotsData("15", "124", "1", "1", "92", "40", "200", "30");towrite += ",";
                 addSlotsData("16", "453", "1", "1", "83", "40", "200", "30");
-            } else if (flag >= 1){
+            } else if (dataflag >= 1){
                 addSlotsData("01", "124", "1", "1", "1", "1", "200", "30");towrite += ",";
                 addSlotsData("02", "453", "1", "1", "1", "1", "200", "30");towrite += ",";
                 addSlotsData("03", "BATT1", "30", "80", "40", "22",  String(randvoltage), "20.561");towrite += ",";
@@ -275,8 +275,8 @@ void vAcquireData( void *pvParameters ){
                 addSlotsData("14", "453", "1", "1", "86", "40", "200", "30");towrite += ",";
                 addSlotsData("15", "124", "1", "1", "92", "40", "200", "30");towrite += ",";
                 addSlotsData("16", "453", "1", "1", "83", "40", "200", "30");
-            }   else if (flag >=2){
-                flag = 0;
+            }   else if (dataflag >=2){
+                dataflag = 0;
             }
             //Now towrite string contains one valid string of CSV data chunk
         }
@@ -295,51 +295,42 @@ void vAcquireData( void *pvParameters ){
  * The execution of this task is controlled by the semaphore semaBlTx1. This 
  * semaphore is given by the acquire data task. Since the semaphore is given 
  * on every chunk of data acquired so, the execution frequency of this task is
- * same as that of acquire data i.e. 30 seconds
+ * same as that of acquire data i.e. 30 seconds. This function also checks and
+ * executes any available command sent by the mobile phone.
  * 
  * @param pvParameters void
  */
-void vBlTransfer( void *pvParameters ){ //synced by the acquire data function
-    for(;;){    //infinite loop
-        if(flags[bt_f] && bt.isConnected){
-            xSemaphoreTake(semaBlTx1, portMAX_DELAY);   //for task sync with acquire data
-            xSemaphoreTake(semaAqData1, portMAX_DELAY); //for copying towrite string
-            String towrite_cpy;
-            towrite_cpy = towrite;
-            xSemaphoreGive(semaAqData1);
-            xSemaphoreTake(semaBlRx1, portMAX_DELAY);
-            log_i("sending data over bluetooth ");
-            bt.send_notification(towrite_cpy);
-            xSemaphoreGive(semaBlRx1);
-            UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-            log_v("Stack usage of bltransfer Task: %d", (int)uxHighWaterMark);
-            flags[bt_blink_f] = 1;
-        }   else if(flags[bt_f]){
-            vTaskDelay(500);     
-        }   else {
-            vTaskDelay(600000); //bluetooth is not working delay 10 minutes
-        }
-    }   //end for
-}   //end vBlTransfer task
-
-/**
- * @brief This function checks and executes any available command sent 
- * by the mobile phone.
- * 
- * @param pvParameters void
- */
-void vBlCheck( void *pvParameters ){
+void vBlTransfer(void *pvParameters)
+{ //synced by the acquire data function
     TickType_t xLastWakeTime_2 = xTaskGetTickCount();
     int _counter = 0;
-    for(;;){
-        if(flags[bt_f] && bt.isConnected){        //bluetooth is working 
+    for (;;)
+    { //infinite loop
+        if (flags[bt_f] && bt.isConnected)
+        {
+            if (xSemaphoreTake(semaBlTx1, 10))
+            {
+                xSemaphoreTake(semaAqData1, portMAX_DELAY); //for copying towrite string
+                String towrite_cpy;
+                towrite_cpy = towrite;
+                xSemaphoreGive(semaAqData1);
+                xSemaphoreTake(semaBlRx1, portMAX_DELAY);
+                log_i("sending data over bluetooth ");
+                bt.send_notification(towrite_cpy);
+                xSemaphoreGive(semaBlRx1);
+                flags[bt_blink_f] = 1;
+                UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+                log_v("Stack usage of blcheck Task: %d", (int)uxHighWaterMark);
+            }
             xSemaphoreTake(semaWifi1, portMAX_DELAY);
             xSemaphoreTake(semaBlRx1, portMAX_DELAY);
             {
-                if(_counter < 10){
+                if (_counter < 10)
+                {
                     _counter += 1;
                 }
-                else{
+                else
+                {
                     _counter = 0;
                     log_i("checking bluetooth commands");
                 }
@@ -347,16 +338,18 @@ void vBlCheck( void *pvParameters ){
             }
             xSemaphoreGive(semaBlRx1);
             xSemaphoreGive(semaWifi1);
-            UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-            log_v("Stack usage of blcheck Task: %d",(int)uxHighWaterMark);
-            vTaskDelayUntil(&xLastWakeTime_2, 0.5*DATA_ACQUISITION_TIME);   
-        }   else if(flags[bt_f]){
-            vTaskDelay(500);     
-        }   else {
+            vTaskDelayUntil(&xLastWakeTime_2, 0.5 * DATA_ACQUISITION_TIME);
+        }
+        else if (flags[bt_f])
+        {
+            vTaskDelay(500);
+        }
+        else
+        {
             vTaskDelay(600000); //bluetooth is not working delay 10 minutes
         }
-    }
-} // end vBlCheck
+    } //end for
+} //end vBlTransfer task
 
 void vStorage( void *pvParameters ){
     for(;;){    //infinite loop
